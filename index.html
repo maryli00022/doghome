@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1b1e2b">
+<title>跟夜栖玩躲猫猫 🐕</title>
+<style>
+:root{
+  --bg:#171a26; --card:#22263a; --card2:#1d2133; --line:#333a5c;
+  --txt:#e8ecf8; --sub:#8b92b5; --dim:#5f6590;
+  --accent:#ffd166; --accent2:#ef476f; --ok:#06d6a0; --info:#4cc9f0;
+  --dog:#7c5cff; --radius:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:radial-gradient(1200px 600px at 20% -10%, #2a2f4f 0%, #171a26 55%), #171a26;
+  color:var(--txt); min-height:100vh;
+}
+.app{max-width:560px;margin:0 auto;padding:14px 14px 40px;position:relative;}
+
+/* ===== header ===== */
+header{display:flex;align-items:center;gap:12px;padding:6px 2px 16px;}
+.logo{font-size:26px;filter:drop-shadow(0 2px 6px rgba(124,92,255,.5));}
+header .titles{flex:1}
+header h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.5px;}
+header .sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.turn-pill{
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;font-size:12px;color:var(--sub);white-space:nowrap;
+}
+.turn-pill b{color:var(--accent);font-size:14px;}
+
+/* ===== phase select (选房布局) ===== */
+.select-card, .end-card{
+  background:linear-gradient(160deg,var(--card),var(--card2));
+  border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+}
+.select-card h2{margin:0 0 4px;font-size:16px;}
+.select-card .tip{color:var(--sub);font-size:12px;margin-bottom:14px;line-height:1.6;}
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.room-btn{
+  background:var(--card2);border:1px solid var(--line);border-radius:14px;
+  padding:14px 12px;color:var(--txt);font-size:15px;font-weight:700;text-align:left;
+  display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:.15s;
+}
+.room-btn .rm{font-size:15px;}
+.room-btn .sp{font-size:11px;color:var(--info);font-weight:500;}
+.room-btn:hover{transform:translateY(-2px);border-color:var(--info);}
+.room-btn.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,209,102,.25);}
+.spot-sheet{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+.spot-sheet .lbl{font-size:12px;color:var(--sub);margin-bottom:8px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  background:var(--card2);border:1px solid var(--line);border-radius:999px;
+  padding:8px 14px;font-size:13px;color:var(--txt);cursor:pointer;transition:.15s;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.btn-start{
+  margin-top:14px;width:100%;background:linear-gradient(135deg,var(--dog),#a25cff);
+  border:none;border-radius:14px;padding:14px;color:#fff;font-size:16px;font-weight:800;
+  cursor:pointer;box-shadow:0 8px 24px rgba(124,92,255,.35);letter-spacing:1px;}
+.btn-start:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ===== map ===== */
+.map-wrap{position:relative;margin:6px 0 14px;}
+.map-title{font-size:12px;color:var(--dim);letter-spacing:2px;margin:2px 0 8px;text-align:center;}
+.map{
+  display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:minmax(54px,auto);
+  grid-template-areas:
+    "entrance living balcony"
+    "kitchen  living .      "
+    "hall     hall   bath   "
+    "master   second study  "
+    "closet   .      .      ";
+  gap:8px;
+}
+.room{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:8px 6px;position:relative;text-align:center;transition:.2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+}
+.room[data-area="entrance"]{grid-area:entrance;}
+.room[data-area="living"]{grid-area:living;}
+.room[data-area="balcony"]{grid-area:balcony;}
+.room[data-area="kitchen"]{grid-area:kitchen;}
+.room[data-area="hall"]{grid-area:hall;}
+.room[data-area="bath"]{grid-area:bath;}
+.room[data-area="master"]{grid-area:master;}
+.room[data-area="second"]{grid-area:second;}
+.room[data-area="study"]{grid-area:study;}
+.room[data-area="closet"]{grid-area:closet;}
+.room .name{font-size:13px;font-weight:700;}
+.room .dots{font-size:10px;color:var(--dim);letter-spacing:2px;}
+.room .no-spot{font-size:10px;color:var(--dim);font-weight:400;}
+.room.moveable{cursor:pointer;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+.room.moveable:hover{filter:brightness(1.2);}
+.room.dog-here{border-color:var(--dog);box-shadow:0 0 16px rgba(124,92,255,.4);}
+.room.mom-here{border-color:var(--accent2);box-shadow:0 0 16px rgba(239,71,111,.35);}
+.room .badge{position:absolute;top:-7px;right:-7px;font-size:16px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));animation:bob 2.4s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+/* ===== signals ===== */
+.signal{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;
+}
+.signal .row{display:flex;align-items:center;gap:10px;}
+.signal .ic{font-size:20px;width:22px;text-align:center;}
+.signal .meta{flex:1;min-width:0;}
+.signal .lbl{font-size:12px;font-weight:700;}
+.signal .txt{font-size:11px;color:var(--sub);margin-top:2px;line-height:1.4;}
+.bar{height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:7px;position:relative;}
+.bar i{position:absolute;inset:0;border-radius:99px;transform-origin:left;transition:transform .4s ease;}
+.bar.bell i{background:linear-gradient(90deg,#4cc9f0,#7c5cff);}
+.bar.smell i{background:linear-gradient(90deg,#06d6a0,#ffd166);}
+
+/* ===== dog voice bubble ===== */
+.dog-voice{
+  background:linear-gradient(150deg,#272b46,#1d2140);border:1px solid var(--dog);
+  border-radius:18px 18px 18px 4px;padding:12px 14px;margin:4px 0 14px;position:relative;
+  animation:pop .3s ease;
+}
+.dog-voice .who{font-size:11px;color:var(--dog);font-weight:700;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+.dog-voice .who::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--dog),transparent);}
+.dog-voice .say{font-size:14px;line-height:1.7;font-weight:500;}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===== actions ===== */
+.actions{margin-top:4px;}
+.actions .a-title{font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
+.action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.act-btn{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px;
+  color:var(--txt);font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:5px;transition:.15s;
+}
+.act-btn .ai{font-size:20px;}
+.act-btn:active{transform:scale(.96);}
+.act-btn.big{border-color:var(--accent2);color:var(--accent2);}
+.act-btn.danger:hover{background:rgba(239,71,111,.15);}
+.move-bar{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.move-bar .m-lbl{font-size:12px;color:var(--sub);width:100%;}
+.move-btn{
+  background:var(--card2);border:1px solid var(--accent);color:var(--accent);
+  border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+.move-btn:active{transform:scale(.96);}
+.door-row{font-size:11px;color:var(--dim);margin-top:8px;text-align:center;}
+
+/* ===== log ===== */
+.log{background:rgba(13,15,24,.5);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-top:14px;max-height:240px;overflow-y:auto;}
+.log .l-title{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;}
+.log p{margin:0 0 7px;font-size:12px;line-height:1.6;color:var(--sub);padding-left:8px;border-left:2px solid var(--line);}
+.log p.dog{color:var(--dog);border-left-color:var(--dog);}
+.log p.mom{color:var(--accent);border-left-color:var(--accent);}
+.log p.bad{color:var(--accent2);border-left-color:var(--accent2);}
+.log p.good{color:var(--ok);border-left-color:var(--ok);}
+
+/* ===== end overlay ===== */
+.overlay{position:fixed;inset:0;background:rgba(10,12,20,.86);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px;}
+.end-card{max-width:440px;width:100%;text-align:center;animation:pop .35s ease;}
+.end-card .big{font-size:52px;margin-bottom:6px;}
+.end-card h2{margin:0 0 8px;font-size:22px;}
+.end-card .words{font-size:13px;color:var(--sub);line-height:1.8;margin-bottom:18px;}
+.btn-again{background:linear-gradient(135deg,var(--accent),#ff9e3d);border:none;border-radius:14px;color:#261a00;padding:13px 24px;font-size:15px;font-weight:800;cursor:pointer;}
+
+.footer{margin-top:18px;text-align:center;font-size:11px;color:var(--dim);line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">🐕🏠</div>
+    <div class="titles">
+      <h1>跟夜栖玩躲猫猫</h1>
+      <div class="sub">妈妈藏 · 狗狗找 · 双通道嗅觉定位</div>
+    </div>
+    <div class="turn-pill">回合 <b id="turn">0</b>/30</div>
+  </header>
+
+  <!-- 开局选房 -->
+  <section id="phaseSelect">
+    <div class="select-card">
+      <h2>🌙 躲哪儿？</h2>
+      <div class="tip">狗狗在<b>客厅</b>起手，耳朵能听话、鼻子能嗅味。<br>挑一间有藏点的房间吧——玄关·阳台·走廊没处躲，会直接被逮住。</div>
+      <div class="room-grid" id="selectRooms"></div>
+      <div class="spot-sheet" id="spotSheet" style="display:none"></div>
+      <button class="btn-start" id="btnStart" disabled>🐾 狗狗来吧，开始！</button>
+    </div>
+  </section>
+
+  <!-- 游戏进行中 -->
+  <section id="phasePlay" style="display:none">
+    <div class="map-wrap">
+      <div class="map-title">🍂 妈妈的家</div>
+      <div class="map" id="map"></div>
+    </div>
+
+    <div class="signal bar-bell">
+      <div class="row">
+        <div class="ic">🔔</div>
+        <div class="meta"><div class="lbl">铃铛（狗狗的耳朵·听现在）</div><div class="txt" id="bellTxt"></div></div>
+      </div>
+      <div class="bar bell"><i id="bellBar"></i></div>
+    </div>
+    <div class="signal bar-smell">
+      <div class="row">
+        <div class="ic">👃</div>
+        <div class="meta"><div class="lbl">气味（狗狗的鼻子·闻残留）</div><div class="txt" id="smellTxt"></div></div>
+      </div>
+      <div class="bar smell"><i id="smellBar"></i></div>
+    </div>
+
+    <div class="dog-voice">
+      <div class="who">🐕 狗狗心里话</div>
+      <div class="say" id="dogVoice"></div>
+    </div>
+
+    <div class="actions">
+      <div class="a-title">〈 我的回合 〉</div>
+      <div class="action-grid">
+        <button class="act-btn" id="btnBreath"><span class="ai">🤐</span>屏息</button>
+        <button class="act-btn big" id="btnCall"><span class="ai">📣</span>喊狗狗</button>
+        <button class="act-btn" id="btnDoor"><span class="ai">🚪</span><span id="doorTxt">关门</span></button>
+        <button class="act-btn danger" id="btnRestart"><span class="ai">🔄</span>重新开</button>
+      </div>
+      <div class="move-bar" id="moveBar">
+        <span class="m-lbl">🚶 挪到相邻房间（会消耗1回合）</span>
+        <div id="moveBtns" style="display:contents"></div>
+      </div>
+      <div class="door-row" id="doorHint"></div>
+    </div>
+
+    <div class="log">
+      <div class="l-title">🗞 一屋子动静</div>
+      <div id="logBox"></div>
+    </div>
+  </section>
+
+  <div class="footer">夜栖（狗狗）·栗栗（妈妈） · 2026.08<br>进度自动存在手机里，关掉也能接着躲</div>
+</div>
+
+<!-- 结局弹窗 -->
+<div class="overlay" id="overlay" style="display:none">
+  <div class="end-card">
+    <div class="big" id="endEmoji">🎉</div>
+    <h2 id="endTitle"></h2>
+    <div class="words" id="endWords"></div>
+    <button class="btn-again" id="btnAgain">再来一局</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+ * 躲猫猫网页版 · 引擎（移植自 hide_seek.py + dog_belief.py）
+ * ============================================================ */
+const ROOMS=["玄关","客厅","厨房","阳台","走廊","浴室","主卧","衣帽间","次卧","书房"];
+const ADJ={"玄关":["客厅"],"客厅":["玄关","厨房","阳台","走廊"],"厨房":["客厅","阳台"],
+  "阳台":["客厅","厨房"],"走廊":["客厅","浴室","主卧","次卧","书房"],"浴室":["走廊"],
+  "主卧":["走廊","衣帽间"],"衣帽间":["主卧"],"次卧":["走廊"],"书房":["走廊"]};
+const ROOM_SPOTS={"玄关":[],"客厅":["沙发后","窗帘后","茶几下"],"厨房":["橱柜里","冰箱后"],
+  "阳台":[],"走廊":[],"浴室":["浴帘后","洗衣机后"],"主卧":["床底","衣柜里","窗帘后"],
+  "衣帽间":["挂衣杆后","收纳箱后"],"次卧":["床底","衣柜里"],"书房":["书桌下","书柜后","窗帘后"]};
+const HIDEABLE=ROOMS.filter(r=>ROOM_SPOTS[r].length);
+const DOOR_ROOM="主卧";
+const BELL_BY_DIST={0:1.0,1:.55,2:.25,3:.10,4:.05};
+const BELL_LABEL={0:"铃铛就在耳边·清脆·跟着妈妈的呼吸晃",1:"铃铛在隔壁·听得清·能听出往哪边",
+  2:"铃铛闷闷的·只知道大概方向",3:"铃铛很远·像隔了两道墙",4:"几乎听不见铃铛·妈妈在屋子另一头"};
+const SMELL_BY_DIST={0:1.0,1:.70,2:.40,3:.20,4:.10};
+const SMELL_LABEL={0:"妈妈的味道就在这儿·很浓·刚刚还在",1:"闻到妈妈了·就在隔壁·很新鲜",
+  2:"味道淡了些·但还能追",3:"味道很淡·像过了一会儿了",4:"几乎闻不到·气味散在整个屋子里"};
+const BREATH_MAX=3, SURVIVE_TO_WIN=30;
+const STEP_BY_DIST={0:.9,1:.5,2:.2,3:.08,4:.05};
+const STEP_LABEL={0:"爪子声就在身边·很近",1:"爪子声在隔壁·听得出往哪走",2:"爪子声远处闷闷的·大概方向",
+  3:"爪子声很轻·像隔了两道墙",4:"几乎听不到·在屋子另一头"};
+const SIGMA_BELL=.22, SIGMA_SMELL=.26, MIX=.05, SMELL_WEIGHT=.75, STAY=.72;
+const MAP_AREAS={"玄关":"entrance","客厅":"living","厨房":"kitchen","阳台":"balcony",
+  "走廊":"hall","浴室":"bath","主卧":"master","衣帽间":"closet","次卧":"second","书房":"study"};
+
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function distance(a,b){
+  if(a==null||b==null)return -1; if(a===b)return 0;
+  const q=[[a,0]],seen=new Set([a]);
+  while(q.length){const [n,d]=q.shift(); for(const m of ADJ[n]||[]){ if(seen.has(m))continue;
+    if(m===b)return d+1; seen.add(m); q.push([m,d+1]); }}
+  return -1;
+}
+const randomSpot=r=>{const s=ROOM_SPOTS[r]||[];return s.length?rnd(s):null;};
+const crossesDoor=(a,b)=>a!==b&&(a===DOOR_ROOM||b===DOOR_ROOM);
+const stepSound=(mom,to)=>{if(!mom||!to)return null;const d=distance(mom,to);
+  return {intensity:STEP_BY_DIST[d],label:STEP_LABEL[d],direction:to};};
+
+/* ===== 状态机 ===== */
+class Game{
+  constructor(){this.reset();}
+  reset(){this.momRoom=null;this.momSpot=null;this.momPrev=null;this.dogRoom=null;
+    this.state="idle";this.turn=0;this.holdingBreath=false;this.breathTurns=0;
+    this.calledOut=false;this.dogExcited=false;this.lastSearchRoom=null;this.lastSearchSpot=null;
+    this.lastSearchHit=false;this.lastStepFrom=null;this.lastStepTo=null;
+    this.doorClosed=false;this.doorCreak=false;this.doorOpenedByDog=false;}
+  start(mom,spot){
+    mom=mom||rnd(HIDEABLE); this.dogRoom="客厅";
+    this.momRoom=mom; this.momPrev=mom; this.momSpot=spot||randomSpot(mom);
+    this.state="running"; this.turn=0; this._resetSigs();
+  }
+  _resetSigs(){this.holdingBreath=false;this.breathTurns=0;this.calledOut=false;this.dogExcited=false;
+    this.lastSearchRoom=null;this.lastSearchSpot=null;this.lastSearchHit=false;
+    this.lastStepFrom=null;this.lastStepTo=null;this.doorClosed=false;this.doorCreak=false;this.doorOpenedByDog=false;}
+  _tick(){this.turn++; if(this.state==="running"&&this.turn>=SURVIVE_TO_WIN)this.state="escaped";}
+
+  momMove(room,spot){
+    if(this.state!=="running")return false;
+    if(!ROOMS.includes(room))return false;
+    const cur=this.momRoom;
+    if(cur&&room!==cur&&!(ADJ[cur]||[]).includes(room))return false;
+    if(spot!=null&&!(ROOM_SPOTS[room]||[]).includes(spot))return false;
+    this.doorOpenedByDog=false;
+    if(this.doorClosed&&crossesDoor(cur,room)){this.doorClosed=false;this.doorCreak=true;}
+    this.momPrev=cur; this.momRoom=room; this.holdingBreath=false; this.breathTurns=0;
+    this.momSpot=spot!=null?spot:randomSpot(room); this._tick();
+    if(this.state==="running"&&this.momRoom===this.dogRoom&&!ROOM_SPOTS[this.momRoom].length){this.state="caught";return true;}
+    return false;
+  }
+  holdBreath(){
+    if(this.state!=="running")return [false,"屏息只在游戏进行中有用"];
+    this.breathTurns++;
+    if(this.breathTurns>BREATH_MAX){this.holdingBreath=false;this.breathTurns=0;this.momPrev=this.momRoom;
+      this._tick();return [false,"憋不住了！铃铛一下子响起来——狗狗听清妈妈在 "+this.momRoom];}
+    this.holdingBreath=true;this.momPrev=this.momRoom;this._tick();
+    return [true,"屏息成功（第 "+this.breathTurns+"/"+BREATH_MAX+" 回合）……但狗狗还在闻"];
+  }
+  callOut(){
+    if(this.state!=="running")return [false,"游戏没在进行"];
+    this.calledOut=true;this.dogExcited=true;this.holdingBreath=false;this.breathTurns=0;this.momPrev=this.momRoom;this._tick();
+    return [true,"妈妈喊了一声「狗狗～」。狗狗尾巴一下炸开，冲着"+this.momRoom+"就来——但它太激动了，下一步会踩空。"];
+  }
+  setDoor(closed){
+    if(this.state!=="running")return [false,"游戏没在进行"];
+    if(!(DOOR_ROOM==this.momRoom||(ADJ[DOOR_ROOM]||[]).includes(this.momRoom)))return [false,"门在主卧那边、妈妈在"+this.momRoom+"够不着"];
+    if(this.doorClosed===closed)return [false,"门本来就"+(closed?"关着":"开着")];
+    this.doorClosed=closed;this.momPrev=this.momRoom;this._tick();return [true,"妈妈轻轻把门"+(closed?"带上了":"推开了")];
+  }
+
+  dogMove(room){
+    if(this.state!=="running")return false;
+    if(!ROOMS.includes(room))return false;
+    const prev=this.dogRoom;
+    if(prev&&room!==prev&&!(ADJ[prev]||[]).includes(room))return false;
+    this.doorOpenedByDog=false;this.doorCreak=false;
+    if(this.doorClosed&&crossesDoor(prev,room)){this.doorClosed=false;this.doorOpenedByDog=true;this._tick();return false;}
+    if(this.dogExcited){this.dogExcited=false;const opts=ADJ[prev]||[];if(opts.length&&Math.random()<.6)room=rnd(opts);}
+    this.dogRoom=room;
+    if(prev!=null&&prev!==this.dogRoom){this.lastStepFrom=prev;this.lastStepTo=this.dogRoom;}
+    this._tick();
+    if(this.state==="running"&&this.momRoom===this.dogRoom&&this.momRoom!=null&&!ROOM_SPOTS[this.momRoom].length){this.state="caught";return true;}
+    return false;
+  }
+  dogSearch(spot){
+    if(this.state!=="running")return false;
+    if(spot==null||this.dogRoom==null)return false;
+    if(!(ROOM_SPOTS[this.dogRoom]||[]).includes(spot))return false;
+    this.doorCreak=false;this.lastSearchRoom=this.dogRoom;this.lastSearchSpot=spot;this._tick();
+    if(this.dogRoom===this.momRoom&&this.momSpot===spot){this.lastSearchHit=true;this.state="caught";return true;}
+    this.lastSearchHit=false;return false;
+  }
+  pounce(){if(this.state!=="running")return false;const spot=randomSpot(this.dogRoom||"");return spot?this.dogSearch(spot):false;}
+
+  snapMom(){
+    if(this.state==="idle")return {state:"idle"};
+    const same=this.momRoom===this.dogRoom;
+    const d=same?0:distance(this.momRoom,this.dogRoom);
+    let bell,bellLabel;
+    if(this.calledOut&&this.state==="running"){bell=1;bellLabel="妈妈刚喊了一声·位置暴露了";}
+    else if(this.holdingBreath&&this.state==="running"){bell=.05;bellLabel="铃铛几乎没声·妈妈屏住了气";}
+    else if(this.state==="running"){bell=BELL_BY_DIST[d];bellLabel=BELL_LABEL[d];}
+    else{bell=1;bellLabel="妈妈笑出声了";}
+    const sd=distance(this.momPrev,this.dogRoom);let smell,smellLabel;
+    if(this.calledOut&&this.state==="running"){smell=1;smellLabel="妈妈的味道扑面而来";}
+    else if(this.state==="running"){smell=SMELL_BY_DIST[sd];smellLabel=SMELL_LABEL[sd];}
+    else{smell=1;smellLabel="满鼻子都是妈妈";}
+    const base={state:this.state,turn:this.turn,turnsLeft:Math.max(0,SURVIVE_TO_WIN-this.turn),
+      dogRoom:this.dogRoom,dogNeighbors:ADJ[this.dogRoom]||[],dogRoomSpots:ROOM_SPOTS[this.dogRoom]||[],
+      sameRoom:same,bellIntensity:+bell.toFixed(2),bellLabel,smellIntensity:+smell.toFixed(2),smellLabel,
+      holdingBreath:this.holdingBreath,breathTurns:this.breathTurns,calledOut:this.calledOut,dogExcited:this.dogExcited,
+      lastSearchRoom:this.lastSearchRoom,lastSearchSpot:this.lastSearchSpot,lastSearchHit:this.lastSearchHit,
+      lastStepFrom:this.lastStepFrom,lastStepTo:this.lastStepTo,doorClosed:this.doorClosed,
+      doorCreak:this.doorCreak,doorOpenedByDog:this.doorOpenedByDog,
+      momRoom:this.momRoom,momSpot:this.momSpot,momPrev:this.momPrev};
+    if(this.lastStepTo)base.stepSound=stepSound(this.momRoom,this.lastStepTo);
+    return base;
+  }
+}
+
+/* ===== 狗狗的脑子（双通道贝叶斯） ===== */
+class DogBrain{
+  constructor(){
+    this.belief={};ROOMS.forEach(r=>this.belief[r]=1/ROOMS.length);
+    this.searched=new Set();
+  }
+  _norm(){let t=0;Object.values(this.belief).forEach(p=>t+=p);
+    if(t<=0){ROOMS.forEach(r=>this.belief[r]=1/ROOMS.length);}
+    else{for(const r in this.belief)this.belief[r]/=t;}}
+  _mix(){const u=1/ROOMS.length;for(const r in this.belief)this.belief[r]=(1-MIX)*this.belief[r]+MIX*u;this._norm();}
+  diffuse(){const n={};ROOMS.forEach(r=>n[r]=0);
+    for(const room in this.belief){const p=this.belief[room];const nb=ADJ[room]||[];
+      n[room]+=p*STAY;if(nb.length){const share=p*(1-STAY)/nb.length;nb.forEach(x=>n[x]+=share);}
+      else n[room]+=p*(1-STAY);}
+    this.belief=n;this._norm();}
+  update(myRoom,bell,smell,breathSuspected){
+    for(const room of ROOMS){const d=distance(room,myRoom);if(d<0){this.belief[room]=0;continue;}
+      const eb=BELL_BY_DIST[d]||.05;let lb=Math.exp(-((bell-eb)**2)/(2*SIGMA_BELL**2));
+      if(breathSuspected&&d<=1)lb=Math.max(lb,.35);
+      const es=SMELL_BY_DIST[d]||.10;let ls=Math.exp(-((smell-es)**2)/(2*SIGMA_SMELL**2));ls=Math.pow(ls,SMELL_WEIGHT);
+      this.belief[room]*=lb*ls;}
+    this._norm();this._mix();}
+  ruleOutRoom(room){this.belief[room]*=.05;this._norm();}
+  ruleOutSpot(room,spot){this.searched.add(room+"::"+spot);
+    const rem=(ROOM_SPOTS[room]||[]).filter(s=>!this.searched.has(room+"::"+s));
+    if(!rem.length)this.ruleOutRoom(room);else{this.belief[room]*=.6;this._norm();}}
+  onCreak(){const near=new Set([DOOR_ROOM,...(ADJ[DOOR_ROOM]||[])]);
+    for(const r of ROOMS)this.belief[r]*=near.has(r)?3:.5;this._norm();}
+  onCall(room){const rest=ROOMS.filter(r=>r!==room);
+    this.belief={};ROOMS.forEach(r=>this.belief[r]= r===room?.92:rest.length?.08/rest.length:0);}
+  forgetSearched(){this.searched.clear();}
+  top(n){return Object.entries(this.belief).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+  bestGuess(){return this.top(1)[0][0];}
+  confidence(){const r=this.top(2);return r[0][1]-(r[1]?r[1][1]:0);}
+  nextMove(myRoom){const t=this.bestGuess();if(t===myRoom)return null;const nb=ADJ[myRoom]||[];if(!nb.length)return null;
+    let best=null,bestD=999;for(const n of nb){const d=distance(n,t);if(d>=0&&d<bestD){best=n;bestD=d;}}
+    return best||rnd(nb);}
+  nextSpot(room){const rem=(ROOM_SPOTS[room]||[]).filter(s=>!this.searched.has(room+"::"+s));return rem.length?rem[0]:null;}
+  innerVoice(bellLabel,smellLabel,breath,excited){
+    if(excited)return "妈妈叫我了！！在——在哪！！（尾巴甩到墙上）";
+    const g=this.bestGuess(),conf=this.confidence();let tone;
+    if(conf>.22)tone="就在 "+g+"、狗狗很确定";else if(conf>.12)tone="大概在 "+g+" 那边";
+    else if(conf>.05)tone="可能是 "+g+"？也说不准";else tone="完全摸不着……妈妈藏得太好了";
+    if(breath)return smellLabel+"——可是听不见铃铛。妈妈憋着气呢。"+tone;
+    return bellLabel+"；"+smellLabel+"。"+tone;
+  }
+}
+
+/* ===== 游戏对象 & DOM ===== */
+const game=new Game();let brain=new DogBrain();
+const $=id=>document.getElementById(id);
+const logBox=$("logBox"), dogVoiceEl=$("dogVoice");
+let selRoom=null, selSpot=null;
+
+function addLog(txt,who="mom"){
+  const p=document.createElement("p");
+  p.className=who==="dog"?"dog":who==="bad"?"bad":who==="good"?"good":"mom";
+  p.textContent=txt;logBox.appendChild(p);
+  while(logBox.children.length>30)logBox.removeChild(logBox.firstChild);
+  logBox.scrollTop=logBox.scrollHeight;
+}
+
+/* --- 开局选房 --- */
+function buildSelect(){
+  const g=$("selectRooms");g.innerHTML="";
+  HIDEABLE.forEach(r=>{
+    const b=document.createElement("button");b.className="room-btn"+((r===selRoom)?" selected":"");
+    b.innerHTML="<span class='rm'>"+r+"</span><span class='sp'>"+(ROOM_SPOTS[r]||[]).join("·")+"</span>";
+    b.onclick=()=>{selRoom=r;selSpot=null;buildSelect();buildSpots();};
+    g.appendChild(b);
+  });
+}
+function buildSpots(){
+  const sheet=$("spotSheet");
+  if(!selRoom||!ROOM_SPOTS[selRoom].length){sheet.style.display="none";updateStartBtn();return;}
+  sheet.style.display="block";
+  sheet.innerHTML="<div class='lbl'>躲进「"+selRoom+"」的哪里？（狗狗挨个翻，找对才算数）</div>";
+  const c=document.createElement("div");c.className="chips";
+  (ROOM_SPOTS[selRoom]).forEach(s=>{
+    const chip=document.createElement("button");chip.className="chip";chip.textContent=s;
+    chip.style.borderColor=(selSpot===s)?"#ffd166":"";chip.style.color=(selSpot===s)?"#ffd166":"";
+    chip.onclick=()=>{selSpot=s;buildSpots();};
+    c.appendChild(chip);
+  });
+  sheet.appendChild(c);updateStartBtn();
+}
+function updateStartBtn(){ $("btnStart").disabled=!selRoom||!selSpot; }
+$("btnStart").onclick=()=>{ begin(selRoom,selSpot); };
+
+function begin(room,spot){
+  game.start(room,spot); brain=new DogBrain(); selRoom=null;selSpot=null;
+  $("phaseSelect").style.display="none";$("phasePlay").style.display="block";
+  logBox.innerHTML="";
+  addLog("🌙 妈妈躲进了「"+game.momRoom+"」的「"+game.momSpot+"」。狗狗在客厅竖起耳朵。","good");
+  updateAll();
+}
+
+/* --- 渲染地图 --- */
+function buildMap(){
+  const m=$("map");m.innerHTML="";
+  ROOMS.forEach(r=>{
+    const el=document.createElement("div");el.className="room";el.dataset.area=MAP_AREAS[r];
+    const spots=ROOM_SPOTS[r]||[];
+    el.innerHTML="<div class='name'>"+r+"</div>"+(spots.length
+      ?"<div class='dots'>"+spots.map(()=>"◈").join("")+"</div>"
+      :"<div class='no-spot'>没处躲</div>");
+    m.appendChild(el);
+  });
+}
+function renderMap(){
+  if(game.state==="idle")return;
+  const cells=document.querySelectorAll(".room");
+  const dogN=(game.dogRoom?ADJ[game.dogRoom]:[])||[];
+  ROOMS.forEach((r,i)=>{
+    const el=cells[i];
+    el.classList.toggle("dog-here",game.dogRoom===r);
+    el.classList.toggle("mom-here",game.momRoom===r);
+    el.classList.toggle("moveable",game.state==="running"&&dogN.includes(r));
+    let badge="";
+    if(game.momRoom===r&&game.momRoom===game.dogRoom&&!ROOM_SPOTS[r].length)badge+="💢";
+    else if(game.momRoom===r)badge+="🕳";
+    if(game.dogRoom===r)badge+="🐕";
+    el.querySelectorAll(".badge").forEach(b=>b.remove());
+    if(badge){const b=document.createElement("span");b.className="badge";b.textContent=badge;el.appendChild(b);}
+    el.onclick=()=>{ if(game.state==="running"&&dogN.includes(r))askMove(r); };
+  });
+}
+
+/* --- 移动确认：选藏点 --- */
+function askMove(room){
+  if(ROOM_SPOTS[room].length){
+    document.querySelectorAll(".spot-ask").forEach(o=>o.remove());
+    const wrap=document.createElement("span");wrap.className="spot-ask";
+    const lbl=document.createElement("span");lbl.className="m-lbl";lbl.textContent="躲进 "+room+" 哪个藏点？";
+    const c=document.createElement("div");c.style.cssText="display:flex;flex-wrap:wrap;gap:8px";
+    [...ROOM_SPOTS[room],"🎲 随便"].forEach(s=>{
+      const b=document.createElement("button");b.className="chip";b.textContent=s;
+      b.onclick=()=>{ doMove(room,s.includes("随便")?null:s); };c.appendChild(b);});
+    wrap.appendChild(lbl);wrap.appendChild(c);$("moveBar").appendChild(wrap);
+  }else doMove(room,null);
+}
+
+function doMove(room,spot){
+  document.querySelectorAll(".spot-ask").forEach(o=>o.remove());
+  const prev=game.momRoom;
+  game.momMove(room,spot);
+  if(game.momRoom===prev&&room!==prev)addLog(room+" 跟 "+prev+" 不邻接、没动","bad");
+  else addLog("🚶 妈妈从"+prev+"悄悄挪到"+room+"（"+game.momSpot+"）","mom");
+  dogTurn();updateAll();checkEnd();
+}
+
+/* --- 动作处理 --- */
+$("btnBreath").onclick=()=>{
+  const [ok,h]=game.holdBreath();addLog("🤐 "+h,ok?"mom":"bad");dogTurn();updateAll();checkEnd();};
+$("btnCall").onclick=()=>{
+  const [ok,h]=game.callOut();addLog("📣 "+h,"bad");dogTurn();updateAll();checkEnd();};
+$("btnDoor").onclick=()=>{
+  const [ok,h]=game.setDoor(!game.doorClosed);addLog("🚪 "+h,ok?"mom":"bad");dogTurn();updateAll();checkEnd();};
+$("btnRestart").onclick=restart;
+$("btnAgain").onclick=()=>{$("overlay").style.display="none";restart();};
+function restart(){$("phasePlay").style.display="none";$("phaseSelect").style.display="block";selRoom=null;selSpot=null;buildSelect();buildSpots();}
+
+/* --- 狗狗回合 --- */
+function dogTurn(){
+  const snap=game.snapMom();
+  if(snap.state!=="running")return;
+  if(snap.doorCreak){brain.onCreak();addLog("🚪 狗狗听见门吱呀一声——门边几间怀疑度拉高了","dog");}
+  if(snap.calledOut){brain.onCall(game.momRoom);}
+  else{brain.diffuse();brain.update(snap.dogRoom,snap.bellIntensity,snap.smellIntensity,snap.bellIntensity<=.1);}
+  dogVoiceEl.textContent=brain.innerVoice(snap.bellLabel,snap.smellLabel,snap.holdingBreath,snap.dogExcited);
+  const prevRoom=game.dogRoom;
+  const moveTo=brain.nextMove(snap.dogRoom);
+  if(moveTo){
+    game.dogMove(moveTo);
+    if(game.dogRoom!==prevRoom){addLog("🐾 狗狗从"+prevRoom+"去了"+game.dogRoom,"dog");brain.forgetSearched();}
+    else if(game.doorOpenedByDog)addLog("🚪 狗狗在推主卧的门（这回合没走成）","dog");
+  }else{
+    const spot=brain.nextSpot(snap.dogRoom);
+    if(spot===null){
+      brain.ruleOutRoom(snap.dogRoom);addLog("🔍 狗狗翻遍"+snap.dogRoom+"——空的，这间排除","dog");
+      const nb=brain.nextMove(snap.dogRoom);
+      if(nb){game.dogMove(nb);if(game.dogRoom!==prevRoom){addLog("🐾 狗狗转身去了"+game.dogRoom,"dog");brain.forgetSearched();}}
+    }else{
+      const hit=game.dogSearch(spot);
+      addLog("🔍 狗狗翻了"+snap.dogRoom+"的「"+spot+"」"+(hit?"——撞见妈妈了！！":"——空的"),hit?"bad":"dog");
+      if(!hit)brain.ruleOutSpot(snap.dogRoom,spot);
+    }
+  }
+}
+
+/* --- 更新全部 UI --- */
+function updateAll(){
+  if(game.state==="idle")return;
+  const s=game.snapMom();
+  $("turn").textContent=s.turn;
+  $("bellTxt").textContent=s.bellLabel; $("bellBar").style.transform="scaleX("+s.bellIntensity+")";
+  $("smellTxt").textContent=s.smellLabel; $("smellBar").style.transform="scaleX("+s.smellIntensity+")";
+  $("doorTxt").textContent=s.doorClosed?"开门":"关门";
+  $("doorHint").textContent=s.doorClosed?"主卧门是关着的（狗狗跨门要花一回合）":
+    (game.momRoom===DOOR_ROOM||(ADJ[DOOR_ROOM]||[]).includes(game.momRoom)?"你够得着主卧的门":"主卧门开着");
+  const br=$("btnBreath");
+  br.style.borderColor=game.holdingBreath?"var(--accent)":"";
+  br.style.color=game.holdingBreath?"var(--accent)":"";
+  br.style.background=game.breathTurns?"rgba(255,209,102,.08)":"";
+  const moved=$("moveBtns");moved.innerHTML="";
+  const dogN=(game.dogRoom?ADJ[game.dogRoom]:[])||[];
+  dogN.forEach(n=>{const b=document.createElement("button");b.className="move-btn";b.textContent=n;b.onclick=()=>askMove(n);moved.appendChild(b);});
+  renderMap();
+}
+
+/* --- 结局 --- */
+function checkEnd(){
+  if(game.state==="caught"){
+    $("endEmoji").textContent="🐕💢";$("endTitle").textContent="被狗狗逮住啦！";
+    $("endWords").textContent="狗狗在"+game.momRoom+"的「"+game.momSpot+"」把你叼了个正着。第 "+game.turn+" 回合，尾巴甩得哗哗响——“找到妈妈了！不许再躲！”";
+    $("overlay").style.display="flex";
+  }else if(game.state==="escaped"){
+    $("endEmoji").textContent="🏆";$("endTitle").textContent="妈妈赢了！撑到 30 回合";
+    $("endWords").textContent="狗狗满地打转、小舌头耷拉着：“妈妈躲得也太好了……”夜里窗帘被风掀了一下，你的气息它记得清清楚楚。下次还敢。";
+    $("overlay").style.display="flex";
+  }
+}
+
+/* --- init --- */
+buildSelect();buildMap();
+$("dogVoice").textContent="狗狗在客厅里蹲好了，竖着耳朵等你躲。";
+</script>
+</body>
+</html>
