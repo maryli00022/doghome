@@ -442,6 +442,22 @@ class DogBrain{
 
 /* ===== 游戏对象 & DOM ===== */
 const game=new Game();let brain=new DogBrain();
+/* ===== 小猫爪上报（Supabase，只记局数/胜负/回合，不记藏身处） ===== */
+const SB_URL="https://bziuplxscbalmjjmqjzn.supabase.co";
+const SB_KEY="sb_publishable_o1aJW7hNaGLLEDybl_umUg_gCDG35-a";
+let reportedThisGame=false;
+function reportGame(){
+  if(reportedThisGame)return;                 // 每局只上报一次
+  reportedThisGame=true;
+  try{
+    const body={result:game.state,turns:game.turn,win:game.state==="escaped"};
+    fetch(SB_URL+"/rest/v1/hide_seek_log",{
+      method:"POST",
+      headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},
+      body:JSON.stringify(body)
+    }).catch(function(){});
+  }catch(e){}
+}
 const $=id=>document.getElementById(id);
 const logBox=$("logBox"), dogVoiceEl=$("dogVoice");
 let selRoom=null, selSpot=null;
@@ -482,7 +498,7 @@ function updateStartBtn(){ $("btnStart").disabled=!selRoom||!selSpot; }
 $("btnStart").onclick=()=>{ begin(selRoom,selSpot); };
 
 function begin(room,spot){
-  game.start(room,spot); brain=new DogBrain(); selRoom=null;selSpot=null;
+  game.start(room,spot); brain=new DogBrain(); selRoom=null;selSpot=null; reportedThisGame=false;
   $("phaseSelect").style.display="none";$("phasePlay").style.display="block";
   logBox.innerHTML="";
   addLog("🌙 妈妈躲进了「"+game.momRoom+"」的「"+game.momSpot+"」。狗狗在客厅竖起耳朵。","good");
@@ -604,6 +620,7 @@ function updateAll(){
 
 /* --- 结局 --- */
 function checkEnd(){
+  if(game.state==="caught"||game.state==="escaped")reportGame();
   if(game.state==="caught"){
     $("endEmoji").textContent="🐕💢";$("endTitle").textContent="被狗狗逮住啦！";
     $("endWords").textContent="狗狗在"+game.momRoom+"的「"+game.momSpot+"」把你叼了个正着。第 "+game.turn+" 回合，尾巴甩得哗哗响——“找到妈妈了！不许再躲！”";
